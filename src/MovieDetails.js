@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { BASE_URL } from "./constants";
 import StarRating from "./StarRating";
 import Loader from "./Loader";
@@ -12,6 +12,8 @@ export default function MovieDetails({
   const [movie, setMovie] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
+
+  const countRef = useRef(0);
 
   const isWatched = watched.some((movie) => movie.imdbID === selectedId);
 
@@ -37,10 +39,15 @@ export default function MovieDetails({
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(" ").at(0)),
       userRating,
+      countRating: countRef.current,
     };
 
     onAddWatched(newWatchedMovie);
   }
+
+  useEffect(() => {
+    if (userRating) countRef.current++;
+  }, [userRating]);
 
   useEffect(() => {
     async function fetchMovieDetails() {
