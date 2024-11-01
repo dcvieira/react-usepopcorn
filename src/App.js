@@ -15,10 +15,15 @@ import { BASE_URL } from "./constants";
 export default function App() {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+
+  const [watched, setWatched] = useState(() => {
+    const saved = localStorage.getItem("watched");
+    const initialValue = JSON.parse(saved);
+    return initialValue || [];
+  });
 
   function handleSelectMovie(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
@@ -37,12 +42,20 @@ export default function App() {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
 
+  const controller = new AbortController();
+
+  useEffect(() => {
+    localStorage.setItem("watched", JSON.stringify(watched));
+  }, [watched]);
+
   useEffect(() => {
     async function fetchMovies() {
       try {
         setIsLoading(true);
         setError("");
-        const response = await fetch(`${BASE_URL}&s=${query}`);
+        const response = await fetch(`${BASE_URL}&s=${query}`, {
+          signal: controller.signal,
+        });
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -55,8 +68,10 @@ export default function App() {
         setMovies(data.Search);
         setIsLoading(false);
       } catch (error) {
-        setError(error.message);
-        setIsLoading(false);
+        if (error.name !== "AbortError") {
+          setError(error.message);
+          setIsLoading(false);
+        }
       }
     }
     if (query.length < 3) {
@@ -64,7 +79,12 @@ export default function App() {
       setError("");
       return;
     }
+    handleCloseMovie();
     fetchMovies();
+
+    return () => {
+      controller.abort();
+    };
   }, [query]);
 
   return (

@@ -63,6 +63,27 @@ export default function MovieDetails({
     }
   }, [selectedId]);
 
+  useEffect(() => {
+    document.title = `${title} | Movie`;
+
+    return function () {
+      document.title = "Use Popcorn";
+    };
+  }, [title]);
+
+  useEffect(() => {
+    const callback = (e) => {
+      if (e.key === "Escape") {
+        onCloseMovie();
+      }
+    };
+    document.addEventListener("keydown", callback);
+
+    return function () {
+      document.removeEventListener("keydown", callback);
+    };
+  });
+
   return (
     <div className="details">
       {isLoading ? (
